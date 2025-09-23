@@ -1,0 +1,78 @@
+package ru.alishev.springcourse.FirstRestApp.models;
+
+import jakarta.persistence.*;
+
+import java.sql.Timestamp;
+
+@Entity
+@Table(name = "measurement")
+public class Measurement {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private int id;
+
+    @Column(name = "value")
+    private double value;
+
+    @Column(name = "raining")
+    private boolean raining;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sensor_id", nullable = true)
+    private Sensor sensor;
+
+    @Column(name = "data_time")
+    private Timestamp dateTime;
+
+    public Measurement() {
+    }
+
+    public Measurement(double value, boolean raining, Sensor sensor, Timestamp dateTime) {
+        this.value = value;
+        this.raining = raining;
+        this.sensor = sensor;
+        this.dateTime = dateTime;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public double getValue() {
+        return value;
+    }
+
+    public void setValue(double value) {
+        this.value = value;
+    }
+
+    public boolean isRaining() {
+        return raining;
+    }
+
+    public void setRaining(boolean raining) {
+        this.raining = raining;
+    }
+
+    public Sensor getSensor() {
+        return sensor;
+    }
+
+    public void setSensor(Sensor sensor) {
+        this.sensor = sensor;
+    }
+
+    public Timestamp getDateTime() {
+        return dateTime;
+    }
+
+    public void setDateTime(Timestamp dateTime) {
+        this.dateTime = dateTime;
+    }
+}
