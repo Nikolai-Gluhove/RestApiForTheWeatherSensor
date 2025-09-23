@@ -1,6 +1,10 @@
 package ru.alishev.springcourse.FirstRestApp.models;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
 import java.sql.Timestamp;
 
@@ -14,9 +18,12 @@ public class Measurement {
     private int id;
 
     @Column(name = "value")
+    @Min(-100)
+    @Max(100)
     private double value;
 
     @Column(name = "raining")
+    @NotEmpty
     private boolean raining;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -24,6 +31,7 @@ public class Measurement {
     private Sensor sensor;
 
     @Column(name = "data_time")
+    @jdk.jfr.Timestamp
     private Timestamp dateTime;
 
     public Measurement() {
