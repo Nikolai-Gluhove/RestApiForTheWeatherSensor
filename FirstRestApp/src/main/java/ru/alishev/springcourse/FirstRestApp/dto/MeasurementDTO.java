@@ -13,12 +13,12 @@ public class MeasurementDTO {
 
 
     @Valid
-    private String sensor;
+    private SensorDTO sensor;
 
     public MeasurementDTO() {
     }
 
-    public MeasurementDTO(double value, boolean raining, String sensor) {
+    public MeasurementDTO(double value, boolean raining, SensorDTO sensor) {
         this.value = value;
         this.raining = raining;
         this.sensor = sensor;
@@ -40,11 +40,11 @@ public class MeasurementDTO {
         this.raining = raining;
     }
 
-    public String getSensor() {
+    public SensorDTO getSensor() {
         return sensor;
     }
 
-    public void setSensor(String sensor) {
+    public void setSensor(SensorDTO sensor) {
         this.sensor = sensor;
     }
 }

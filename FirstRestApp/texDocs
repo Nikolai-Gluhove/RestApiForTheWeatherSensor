@@ -38,9 +38,6 @@
 8.2	Реализовать registerSensor(name) в клиенте (POST /sensors/registration)	To Do	8.1
 8.3	Реализовать sendRandomMeasurements(sensorName, 1000) — генерировать значения и POST /measurements/add	To Do	8.2, сервер запущен
 8.4	Реализовать fetchAllMeasurements() — GET /measurements и проверка на 1000 записей	To Do	8.3
-9.1	(Опция) Построить график температур из полученных данных с помощью xchart	To Do	8.4
-10.1	Написать README со схемой запуска сервера и клиента	To Do	1.1–1.4
-10.2	(Опция) Написать интеграционные тесты контроллеров (MockMvc + H2)	To Do	6.1–6.4, 2.1–2.4
 
 
 Всего в приложении должно быть 4 адреса:
