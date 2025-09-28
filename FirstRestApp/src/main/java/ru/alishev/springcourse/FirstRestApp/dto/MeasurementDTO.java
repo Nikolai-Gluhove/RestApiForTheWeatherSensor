@@ -1,16 +1,17 @@
 package ru.alishev.springcourse.FirstRestApp.dto;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
-import org.hibernate.annotations.Check;
+import jakarta.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.Range;
 
 public class MeasurementDTO {
 
-    private double value;
+    @Range(min = -100, max = 100, message = "Значение должно быть от -100 до 100")
+    @NotNull(message = "значение не может быть пустым")
+    private Double value;
 
-    @NotEmpty
-    private boolean raining;
-
+    @NotNull(message = "значение не может быть пустым")
+    private Boolean raining;
 
     @Valid
     private SensorDTO sensor;
@@ -18,25 +19,25 @@ public class MeasurementDTO {
     public MeasurementDTO() {
     }
 
-    public MeasurementDTO(double value, boolean raining, SensorDTO sensor) {
+    public MeasurementDTO(Double value, Boolean raining, SensorDTO sensor) {
         this.value = value;
         this.raining = raining;
         this.sensor = sensor;
     }
 
-    public double getValue() {
+    public Double getValue() {
         return value;
     }
 
-    public void setValue(double value) {
+    public void setValue(Double value) {
         this.value = value;
     }
 
-    public boolean isRaining() {
+    public Boolean isRaining() {
         return raining;
     }
 
-    public void setRaining(boolean raining) {
+    public void setRaining(Boolean raining) {
         this.raining = raining;
     }
 

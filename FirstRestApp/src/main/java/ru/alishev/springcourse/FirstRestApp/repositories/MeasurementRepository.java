@@ -6,4 +6,5 @@ import ru.alishev.springcourse.FirstRestApp.models.Measurement;
 
 @Repository
 public interface MeasurementRepository extends JpaRepository<Measurement, Integer> {
+    long countByRainingTrue();
 }

@@ -1,11 +1,10 @@
 package ru.alishev.springcourse.FirstRestApp.models;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.Range;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "measurement")
@@ -17,26 +16,25 @@ public class Measurement {
     private int id;
 
     @Column(name = "value")
-    @Min(-100)
-    @Max(100)
-    private double value;
+    @Range(min = -100, max = 100, message = "Значение должно быть от -100 до 100")
+    @NotNull(message = "значение не может быть пустым")
+    private Double value;
 
     @Column(name = "raining")
-    @NotEmpty
-    private boolean raining;
+    @NotNull(message = "значение не может быть пустым")
+    private Boolean raining;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sensor_id", nullable = true)
     private Sensor sensor;
 
     @Column(name = "data_time")
-    @jdk.jfr.Timestamp
-    private Timestamp dateTime;
+    private LocalDateTime dateTime;
 
     public Measurement() {
     }
 
-    public Measurement(double value, boolean raining, Sensor sensor, Timestamp dateTime) {
+    public Measurement(Double value, Boolean raining, Sensor sensor, LocalDateTime dateTime) {
         this.value = value;
         this.raining = raining;
         this.sensor = sensor;
@@ -51,19 +49,19 @@ public class Measurement {
         this.id = id;
     }
 
-    public double getValue() {
+    public Double getValue() {
         return value;
     }
 
-    public void setValue(double value) {
+    public void setValue(Double value) {
         this.value = value;
     }
 
-    public boolean isRaining() {
+    public Boolean isRaining() {
         return raining;
     }
 
-    public void setRaining(boolean raining) {
+    public void setRaining(Boolean raining) {
         this.raining = raining;
     }
 
@@ -75,11 +73,11 @@ public class Measurement {
         this.sensor = sensor;
     }
 
-    public Timestamp getDateTime() {
+    public LocalDateTime getDateTime() {
         return dateTime;
     }
 
-    public void setDateTime(Timestamp dateTime) {
+    public void setDateTime(LocalDateTime dateTime) {
         this.dateTime = dateTime;
     }
 }

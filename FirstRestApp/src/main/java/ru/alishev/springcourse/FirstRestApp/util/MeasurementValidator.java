@@ -4,30 +4,29 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
-import ru.alishev.springcourse.FirstRestApp.dto.SensorDTO;
+import ru.alishev.springcourse.FirstRestApp.dto.MeasurementDTO;
 import ru.alishev.springcourse.FirstRestApp.services.SensorService;
 
 @Component
-public class SensorValidator implements Validator {
-
+public class MeasurementValidator implements Validator {
     private final SensorService sensorService;
 
     @Autowired
-    public SensorValidator(SensorService sensorService) {
+    public MeasurementValidator(SensorService sensorService) {
         this.sensorService = sensorService;
     }
 
     @Override
     public boolean supports(Class<?> clazz) {
-        return SensorDTO.class.equals(clazz);
+        return MeasurementDTO.class.equals(clazz);
     }
 
     @Override
     public void validate(Object target, Errors errors) {
-        SensorDTO sensorDTO = (SensorDTO) target;
+        MeasurementDTO measurementDTO = (MeasurementDTO)  target;
 
-        if (sensorService.findByName(sensorDTO.getName()).isPresent()){
-            errors.rejectValue("name", "400", "Имя "+sensorDTO.getName()+" занято");
+        if (!sensorService.findByName(measurementDTO.getSensor().getName()).isPresent()){
+            errors.rejectValue("sensor.name", "400", "Сенсора "+measurementDTO.getSensor().getName()+" нет в системе");
         }
     }
 }
