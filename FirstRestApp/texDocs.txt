@@ -1,2 +1,0 @@
-диаграммы последовательностей
-    4) GET /measurements/rainyDaysCount
