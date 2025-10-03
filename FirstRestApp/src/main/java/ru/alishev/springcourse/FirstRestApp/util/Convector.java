@@ -4,12 +4,13 @@ import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 import ru.alishev.springcourse.FirstRestApp.dto.MeasurementDTO;
 import ru.alishev.springcourse.FirstRestApp.dto.SensorDTO;
 import ru.alishev.springcourse.FirstRestApp.models.Measurement;
 import ru.alishev.springcourse.FirstRestApp.models.Sensor;
 
-@Configuration
+@Component
 public class Convector {
     private final ModelMapper modelMapper;
 
