@@ -37,27 +37,10 @@ public class SensorController {
                                                    BindingResult bindingResult){
         sensorValidator.validate(sensorDTO, bindingResult);
         if (bindingResult.hasErrors()){
-            StringBuilder errorMsg = new StringBuilder();
-
-            List<FieldError> errors = bindingResult.getFieldErrors();
-            for (FieldError error : errors){
-                errorMsg.append(error.getField())
-                        .append(" - ")
-                        .append(error.getDefaultMessage())
-                        .append("; ");
-            }
-
-            throw new SensorValidetException(errorMsg.toString());
+            throw new SensorValidetException(bindingResult);
         }
 
         sensorService.save(convector.convectSensorAndSensorDTO(sensorDTO));
         return ResponseEntity.ok(HttpStatus.OK);
-    }
-
-    //ошибка валидации
-    @ExceptionHandler
-    private ResponseEntity<ErrorResponse> handleException(SensorValidetException e){
-        ErrorResponse response = new ErrorResponse(e.getMessage(), System.currentTimeMillis());
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 }

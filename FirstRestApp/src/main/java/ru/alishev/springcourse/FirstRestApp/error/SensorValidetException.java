@@ -1,7 +1,9 @@
 package ru.alishev.springcourse.FirstRestApp.error;
 
-public class SensorValidetException extends RuntimeException {
-    public SensorValidetException(String message) {
-        super(message);
+import org.springframework.validation.BindingResult;
+
+public class SensorValidetException extends CustomError {
+    public SensorValidetException(BindingResult bindingResult) {
+        super(bindingResult);
     }
 }

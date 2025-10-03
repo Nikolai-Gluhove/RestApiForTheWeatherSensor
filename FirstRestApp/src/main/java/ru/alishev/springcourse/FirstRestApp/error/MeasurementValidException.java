@@ -1,7 +1,13 @@
 package ru.alishev.springcourse.FirstRestApp.error;
 
-public class MeasurementValidException extends RuntimeException{
-    public MeasurementValidException(String message) {
+import org.springframework.validation.BindingResult;
+
+public class MeasurementValidException extends CustomError{
+    public MeasurementValidException(BindingResult bindingResult) {
+        super(bindingResult);
+    }
+
+    public MeasurementValidException(String message){
         super(message);
     }
 }
