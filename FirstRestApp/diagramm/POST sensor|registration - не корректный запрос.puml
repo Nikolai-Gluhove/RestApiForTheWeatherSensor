@@ -1,0 +1,113 @@
+@startuml
+title Диаграмма последовательности: обработка некорректного запроса на регистрацию сенсора
+
+skinparam BackgroundColor transparent
+skinparam ParticipantBackgroundColor #LightBlue
+skinparam ActorBackgroundColor #White
+skinparam ControlBackgroundColor #LightGreen
+skinparam DatabaseBackgroundColor #White
+
+actor "Клиент" as Client #White
+control "DispatcherServlet" as Dispatcher #LightGreen
+control "ApplicationContext" as AppContext #LightGreen
+participant "SensorController" as Controller #LightBlue
+participant "SensorValidator" as Validator #LightBlue
+participant "SensorService" as Service #LightBlue
+participant "SensorRepository" as Repository #LightBlue
+control "JpaRepository" as JPA #LightGreen
+control "TransactionManager" as TxManager #LightGreen
+database "База данных" as Database #White
+participant "RestExceptionHandler" as ExceptionHandler #LightBlue
+participant "ErrorResponse" as ErrorResp #LightBlue
+
+== Инициализация запроса ==
+
+Client -> Dispatcher: POST /sensors/registration\n{ "name": "ab" }
+activate Dispatcher
+
+Dispatcher -> AppContext: find handler for /sensors/registration
+activate AppContext
+AppContext --> Dispatcher: SensorController.registration()
+deactivate AppContext
+
+note right of Dispatcher: Front Controller Spring MVC\nмаршрутизирует запрос к контроллеру
+
+== Обработка в контроллере ==
+
+Dispatcher -> Controller: registration(sensorDTO, bindingResult)
+activate Controller
+
+Controller -> Dispatcher: **@Valid** аннотация
+activate Dispatcher
+Dispatcher -> Controller: Spring Validation автоматически\nпроверяет аннотации в SensorDTO\n(ошибка: имя слишком короткое)
+deactivate Dispatcher
+
+note right of Controller: Spring автоматически обнаруживает\nнарушение @Size(min=3, max=30)
+
+== Валидация и обнаружение ошибок ==
+
+Controller -> Validator: validate(sensorDTO, bindingResult)
+activate Validator
+
+note right of Validator: Кастомная валидация выполняется\nнесмотря на ошибки базовой валидации
+
+Validator -> Service: findByName(sensorDTO.getName())
+activate Service
+
+Service -> Repository: findByName(name)
+activate Repository
+
+Repository -> JPA: findByName(name)
+activate JPA
+JPA -> Database: SELECT * FROM sensor WHERE name = ?
+activate Database
+Database --> JPA: Optional.empty()
+deactivate Database
+JPA --> Repository: Optional.empty()
+deactivate JPA
+
+Repository --> Service: Optional.empty()
+deactivate Repository
+
+Service --> Validator: Optional.empty()
+deactivate Service
+
+Validator --> Controller: bindingResult с ошибками\n(базовая + кастомная валидация)
+deactivate Validator
+
+== Генерация исключения ==
+
+Controller -> Controller: bindingResult.hasErrors() = true
+Controller -> Controller: **throw new SensorValidetException(bindingResult)**
+deactivate Controller
+
+note right of Controller: Исключение содержит BindingResult\nсо всеми ошибками валидации
+
+== Обработка исключения ==
+
+Dispatcher -> ExceptionHandler: handleException(SensorValidetException)
+activate ExceptionHandler
+
+ExceptionHandler -> ExceptionHandler: getMessage(customError)\nизвлекает ошибки из BindingResult
+ExceptionHandler -> ErrorResp: **new ErrorResponse(errorMessage, timestamp)**
+activate ErrorResp
+ErrorResp --> ExceptionHandler: ErrorResponse объект
+deactivate ErrorResp
+
+ExceptionHandler -> Dispatcher: ResponseEntity<ErrorResponse>(response, HttpStatus.BAD_REQUEST)
+deactivate ExceptionHandler
+
+== Формирование ответа об ошибке ==
+
+Dispatcher -> Client: HTTP 400 Bad Request\n{ "message": "name - Name should be between 3 and 30 characters; ", "timestamp": 1234567890 }
+deactivate Dispatcher
+
+note over Controller, Database: Запрос не дошел до сохранения в БД\nиз-за ошибок валидации
+
+legend right
+  |<#LightBlue> **Мои классы** | |
+  |<#LightGreen> **Классы Spring** | |
+  | **Внешние системы** | |
+end legend
+
+@enduml

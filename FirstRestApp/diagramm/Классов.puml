@@ -1,0 +1,330 @@
+@startuml
+title Диаграмма классов Spring Boot приложения для управления сенсорами и измерениями
+
+skinparam groupInheritance 2
+skinparam roundcorner 10
+skinparam class {
+    BackgroundColor<<MyClass>> LightBlue
+    BackgroundColor<<SpringClass>> LightGreen
+    BorderColor Black
+    ArrowColor Black
+}
+
+package "Database" <<Rectangle>> {
+  class Measurement <<MyClass>> {
+    Сущность измерения
+    --
+    -id: Integer
+    -value: Double
+    -raining: Boolean
+    -dateTime: LocalDateTime
+    --
+    +getValue()
+    +isRaining()
+    +getSensor()
+    +getDateTime()
+  }
+
+  class Sensor <<MyClass>> {
+    Сущность сенсора
+    --
+    -id: Integer
+    -name: String
+    --
+    +getName()
+    +setName()
+  }
+}
+
+package "DTO" <<Rectangle>> {
+  class MeasurementDTO <<MyClass>> {
+    DTO для измерения
+    --
+    -value: Double
+    -raining: Boolean
+    -sensor: SensorDTO
+    --
+    +getValue()
+    +isRaining()
+    +getSensor()
+  }
+
+  class SensorDTO <<MyClass>> {
+    DTO для сенсора
+    --
+    -name: String
+    --
+    +getName()
+    +setName()
+  }
+
+  class MeasurementsResponse <<MyClass>> {
+    Ответ со списком измерений
+    --
+    -measurementDTOList: List<MeasurementDTO>
+    --
+    +getMeasurementDTOList()
+  }
+}
+
+package "Repositories" <<Rectangle>> {
+  interface MeasurementRepository <<MyClass>> {
+    Репозиторий для измерений
+    --
+    +findAll(): List<Measurement>
+    +countByRainingTrue(): long
+    +save()
+  }
+
+  interface SensorRepository <<MyClass>> {
+    Репозиторий для сенсоров
+    --
+    +findByName(String): Optional<Sensor>
+    +save()
+  }
+}
+
+package "Services" <<Rectangle>> {
+  class MeasurementService <<MyClass>> {
+    Сервис для работы с измерениями
+    --
+    -measurementRepository: MeasurementRepository
+    -sensorService: SensorService
+    --
+    +save(Measurement)
+    +findAll(): List<Measurement>
+    +countByRainingTrue(): long
+  }
+
+  class SensorService <<MyClass>> {
+    Сервис для работы с сенсорами
+    --
+    -sensorRepository: SensorRepository
+    --
+    +findByName(String): Optional<Sensor>
+    +save(Sensor)
+  }
+}
+
+package "Controllers" <<Rectangle>> {
+  class MeasurementController <<MyClass>> {
+    REST контроллер для измерений
+    --
+    -measurementService: MeasurementService
+    -convector: Convector
+    -measurementValidator: MeasurementValidator
+    --
+    +add(): ResponseEntity<HttpStatus>
+    +getAllMeasurements(): MeasurementsResponse
+    +getNumberOfRainyDays(): long
+  }
+
+  class SensorController <<MyClass>> {
+    REST контроллер для сенсоров
+    --
+    -sensorService: SensorService
+    -convector: Convector
+    -sensorValidator: SensorValidator
+    --
+    +registration(): ResponseEntity<HttpStatus>
+  }
+}
+
+package "Configuration" <<Rectangle>> {
+  class AppConfig <<MyClass>> {
+    Конфигурация приложения
+    --
+    +modelMapper(): ModelMapper
+  }
+
+  class Convector <<MyClass>> {
+    Конвертер DTO-сущностей
+    --
+    -modelMapper: ModelMapper
+    --
+    +convectSensorAndSensorDTO()
+    +convectMeasurementAndMeasurementDTO()
+  }
+}
+
+package "Validation" <<Rectangle>> {
+  class MeasurementValidator <<MyClass>> {
+    Валидатор измерений
+    --
+    -sensorService: SensorService
+    --
+    +validate()
+    +supports()
+  }
+
+  class SensorValidator <<MyClass>> {
+    Валидатор сенсоров
+    --
+    -sensorService: SensorService
+    --
+    +validate()
+    +supports()
+  }
+}
+
+package "Error Handling" <<Rectangle>> {
+  class RestExceptionHandler <<MyClass>> {
+    Глобальный обработчик исключений
+    --
+    +handleException(): ResponseEntity<ErrorResponse>
+  }
+
+  class ErrorResponse <<MyClass>> {
+    Ответ об ошибке
+    --
+    -message: String
+    -timestamp: long
+    --
+    +getMessage()
+    +getTimestamp()
+  }
+
+  class CustomError <<MyClass>> {
+    Базовое исключение
+    --
+    -bindingResult: BindingResult
+    --
+    +getBindingResult()
+  }
+
+  class SensorValidetException <<MyClass>> {
+    Исключение валидации сенсора
+  }
+
+  class MeasurementValidException <<MyClass>> {
+    Исключение валидации измерения
+  }
+}
+
+package "Spring Framework" <<Rectangle>> {
+  class JpaRepository <<SpringClass>> {
+    Базовый репозиторий Spring Data JPA
+    --
+    +findAll()
+    +findById()
+    +save()
+    +delete()
+  }
+
+  class ModelMapper <<SpringClass>> {
+    Библиотека маппинга объектов
+    --
+    +map()
+  }
+
+  class Validator <<SpringClass>> {
+    Интерфейс валидации Spring
+    --
+    +validate()
+    +supports()
+  }
+
+  class BindingResult <<SpringClass>> {
+    Результаты валидации
+    --
+    +hasErrors()
+    +getFieldErrors()
+  }
+
+  class ResponseEntity <<SpringClass>> {
+    HTTP ответ Spring
+    --
+    +ok()
+    +status()
+  }
+
+  class HttpStatus <<SpringClass>> {
+    HTTP статусы
+  }
+
+  class DispatcherServlet <<SpringClass>> {
+    Front controller Spring MVC
+    --
+    Обрабатывает все HTTP запросы
+  }
+
+  class ApplicationContext <<SpringClass>> {
+    Контекст приложения Spring
+    --
+    Управляет бинами и их жизненным циклом
+  }
+}
+
+' Связи между классами
+
+' Наследование и реализации
+MeasurementRepository ..|> JpaRepository
+SensorRepository ..|> JpaRepository
+MeasurementValidator ..|> Validator
+SensorValidator ..|> Validator
+SensorValidetException --|> CustomError
+MeasurementValidException --|> CustomError
+
+' Агрегация и композиция
+MeasurementService o-- MeasurementRepository
+MeasurementService o-- SensorService
+SensorService o-- SensorRepository
+MeasurementController o-- MeasurementService
+MeasurementController o-- Convector
+MeasurementController o-- MeasurementValidator
+SensorController o-- SensorService
+SensorController o-- Convector
+SensorController o-- SensorValidator
+Convector o-- ModelMapper
+MeasurementValidator o-- SensorService
+SensorValidator o-- SensorService
+AppConfig *-- ModelMapper
+
+' Зависимости
+MeasurementDTO ..> SensorDTO
+MeasurementsResponse ..> MeasurementDTO
+Measurement ..> Sensor
+MeasurementService ..> MeasurementValidException
+SensorService ..> SensorValidetException
+RestExceptionHandler ..> CustomError
+RestExceptionHandler ..> ErrorResponse
+RestExceptionHandler ..> ResponseEntity
+
+' Внешние вызовы
+DispatcherServlet ..> MeasurementController : calls
+DispatcherServlet ..> SensorController : calls
+DispatcherServlet ..> RestExceptionHandler : calls
+ApplicationContext ..> AppConfig : calls
+
+' Примечания
+note top of MeasurementRepository
+  Spring Data JPA автоматически
+  генерирует реализации методов
+  на основе именования
+end note
+
+note top of Convector
+  Использует ModelMapper для
+  преобразования между
+  DTO и сущностями
+end note
+
+note top of RestExceptionHandler
+  @RestControllerAdvice перехватывает
+  исключения со всех контроллеров
+  и возвращает структурированный ответ
+end note
+
+note top of DispatcherServlet
+  Центральный диспетчер Spring MVC,
+  маршрутизирует запросы к соответствующим
+  контроллерам и обрабатывает исключения
+end note
+
+' Легенда
+legend right
+  | Цвета | |
+  | <#LightBlue> Мои классы | |
+  | <#LightGreen> Классы Spring | |
+end legend
+@enduml

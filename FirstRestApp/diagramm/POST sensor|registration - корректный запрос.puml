@@ -1,0 +1,134 @@
+@startuml
+title Диаграмма последовательности: регистрация нового сенсора
+
+skinparam BackgroundColor transparent
+skinparam ParticipantBackgroundColor #LightBlue
+skinparam ActorBackgroundColor #White
+skinparam ControlBackgroundColor #LightGreen
+skinparam DatabaseBackgroundColor #White
+
+actor "Клиент" as Client #White
+control "DispatcherServlet" as Dispatcher #LightGreen
+control "ApplicationContext" as AppContext #LightGreen
+participant "SensorController" as Controller #LightBlue
+participant "SensorValidator" as Validator #LightBlue
+participant "SensorService" as Service #LightBlue
+participant "SensorRepository" as Repository #LightBlue
+control "JpaRepository" as JPA #LightGreen
+control "TransactionManager" as TxManager #LightGreen
+database "База данных" as Database #White
+participant "Convector" as Converter #LightBlue
+control "ModelMapper" as Mapper #LightGreen
+participant "RestExceptionHandler" as ExceptionHandler #LightBlue
+
+== Инициализация запроса ==
+
+Client -> Dispatcher: POST /sensors/registration\n{ "name": "sensor-1" }
+activate Dispatcher
+
+Dispatcher -> AppContext: find handler for /sensors/registration
+activate AppContext
+AppContext --> Dispatcher: SensorController.registration()
+deactivate AppContext
+
+note right of Dispatcher: Front Controller Spring MVC\nмаршрутизирует запрос к контроллеру
+
+== Обработка в контроллере ==
+
+Dispatcher -> Controller: registration(sensorDTO, bindingResult)
+activate Controller
+
+Controller -> Dispatcher: **@Valid** аннотация
+activate Dispatcher
+Dispatcher -> Controller: Spring Validation автоматически\nпроверяет аннотации в SensorDTO
+deactivate Dispatcher
+
+note right of Controller: Spring автоматически выполняет\nбазовую валидацию на основе аннотаций
+
+Controller -> Validator: validate(sensorDTO, bindingResult)
+activate Validator
+
+== Бизнес-логика валидации ==
+
+Validator -> Service: findByName(sensorDTO.getName())
+activate Service
+
+Service -> Repository: findByName(name)
+activate Repository
+
+Repository -> JPA: findByName(name)
+activate JPA
+JPA -> Database: SELECT * FROM sensor WHERE name = ?
+activate Database
+Database --> JPA: Optional.empty() (сенсор не найден)
+deactivate Database
+JPA --> Repository: Optional.empty()
+deactivate JPA
+
+Repository --> Service: Optional.empty()
+deactivate Repository
+
+Service --> Validator: Optional.empty()
+deactivate Service
+
+Validator --> Controller: bindingResult (без ошибок)
+deactivate Validator
+
+note right of Validator: Кастомная валидация: проверка\nуникальности имени сенсора
+
+== Преобразование и сохранение ==
+
+Controller -> Converter: convectSensorAndSensorDTO(sensorDTO)
+activate Converter
+
+Converter -> Mapper: map(sensorDTO, Sensor.class)
+activate Mapper
+Mapper --> Converter: Sensor объект
+deactivate Mapper
+
+Converter --> Controller: Sensor entity
+deactivate Converter
+
+Controller -> Service: save(sensor)
+activate Service
+
+Service -> TxManager: start transaction
+activate TxManager
+
+Service -> Repository: save(sensor)
+activate Repository
+
+Repository -> JPA: save(sensor)
+activate JPA
+JPA -> Database: INSERT INTO sensor (name) VALUES (?)
+activate Database
+Database --> JPA: ID сгенерирован
+deactivate Database
+JPA --> Repository: сохраненный Sensor
+deactivate JPA
+
+Repository --> Service: сохраненный Sensor
+deactivate Repository
+
+Service -> TxManager: commit transaction
+deactivate TxManager
+
+Service --> Controller: void
+deactivate Service
+
+== Формирование ответа ==
+
+Controller -> Dispatcher: ResponseEntity.ok(HttpStatus.OK)
+deactivate Controller
+
+Dispatcher -> Client: HTTP 200 OK
+deactivate Dispatcher
+
+note over Controller, Database: Транзакция успешно завершена\nСенсор сохранен в базу данных
+
+legend right
+  |<#LightBlue> **Мои классы** | |
+  |<#LightGreen> **Классы Spring** | |
+  | **Внешние системы** | |
+end legend
+@enduml

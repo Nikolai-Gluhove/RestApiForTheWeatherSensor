@@ -1,0 +1,153 @@
+@startuml
+title Диаграмма последовательности: добавление нового измерения
+
+skinparam BackgroundColor transparent
+skinparam ParticipantBackgroundColor #LightBlue
+skinparam ActorBackgroundColor #White
+skinparam ControlBackgroundColor #LightGreen
+skinparam DatabaseBackgroundColor #White
+
+actor "Клиент" as Client #White
+control "DispatcherServlet" as Dispatcher #LightGreen
+control "ApplicationContext" as AppContext #LightGreen
+participant "MeasurementController" as Controller #LightBlue
+participant "MeasurementValidator" as Validator #LightBlue
+participant "Convector" as Converter #LightBlue
+control "ModelMapper" as Mapper #LightGreen
+participant "MeasurementService" as Service #LightBlue
+participant "SensorService" as SensorService #LightBlue
+participant "MeasurementRepository" as MeasRepo #LightBlue
+participant "SensorRepository" as SensorRepo #LightBlue
+control "JpaRepository" as JPA #LightGreen
+control "TransactionManager" as TxManager #LightGreen
+database "База данных" as Database #White
+
+== Инициализация запроса ==
+
+Client -> Dispatcher: POST /measurements/add\n{ "value": 25.5, "raining": false, "sensor": { "name": "sensor-1" } }
+activate Dispatcher
+
+Dispatcher -> AppContext: find handler for /measurements/add
+activate AppContext
+AppContext --> Dispatcher: MeasurementController.add()
+deactivate AppContext
+
+== Обработка в контроллере ==
+
+Dispatcher -> Controller: add(measurementDTO, bindingResult)
+activate Controller
+
+Controller -> Dispatcher: **@Valid** аннотация
+activate Dispatcher
+Dispatcher -> Controller: Spring Validation автоматически\nпроверяет аннотации в MeasurementDTO\nи вложенный SensorDTO
+deactivate Dispatcher
+
+Controller -> Validator: validate(measurementDTO, bindingResult)
+activate Validator
+
+== Валидация существования сенсора ==
+
+Validator -> SensorService: findByName(measurementDTO.sensor.name)
+activate SensorService
+
+SensorService -> SensorRepo: findByName(name)
+activate SensorRepo
+
+SensorRepo -> JPA: findByName(name)
+activate JPA
+JPA -> Database: SELECT * FROM sensor WHERE name = 'sensor-1'
+activate Database
+Database --> JPA: Sensor(id=1, name='sensor-1')
+deactivate Database
+JPA --> SensorRepo: Optional<Sensor>
+deactivate JPA
+
+SensorRepo --> SensorService: Optional<Sensor>
+deactivate SensorRepo
+
+SensorService --> Validator: Optional<Sensor> (сенсор найден)
+deactivate SensorService
+
+Validator --> Controller: bindingResult (без ошибок)
+deactivate Validator
+
+== Преобразование DTO в сущность ==
+
+Controller -> Converter: convectMeasurementAndMeasurementDTO(measurementDTO)
+activate Converter
+
+Converter -> Mapper: map(measurementDTO, Measurement.class)
+activate Mapper
+Mapper --> Converter: Measurement объект
+deactivate Mapper
+
+Converter --> Controller: Measurement entity
+deactivate Converter
+
+== Сохранение измерения ==
+
+Controller -> Service: save(measurement)
+activate Service
+
+Service -> TxManager: start transaction
+activate TxManager
+
+Service -> SensorService: findByName(measurement.sensor.name)
+activate SensorService
+
+SensorService -> SensorRepo: findByName(name)
+activate SensorRepo
+
+SensorRepo -> JPA: findByName(name)
+activate JPA
+JPA -> Database: SELECT * FROM sensor WHERE name = 'sensor-1'
+activate Database
+Database --> JPA: Sensor(id=1, name='sensor-1')
+deactivate Database
+JPA --> SensorRepo: Optional<Sensor>
+deactivate JPA
+
+SensorRepo --> SensorService: Optional<Sensor>
+deactivate SensorRepo
+
+SensorService --> Service: Optional<Sensor>
+deactivate SensorService
+
+Service -> Service: measurement.setSensor(sensor.get())\nmeasurement.setDateTime(LocalDateTime.now())
+
+Service -> MeasRepo: save(measurement)
+activate MeasRepo
+
+MeasRepo -> JPA: save(measurement)
+activate JPA
+JPA -> Database: INSERT INTO measurement (value, raining, sensor_id, data_time) VALUES (25.5, false, 1, '2024-01-15 10:30:00')
+activate Database
+Database --> JPA: ID сгенерирован
+deactivate Database
+JPA --> MeasRepo: сохраненный Measurement
+deactivate JPA
+
+MeasRepo --> Service: сохраненный Measurement
+deactivate MeasRepo
+
+Service -> TxManager: commit transaction
+deactivate TxManager
+
+Service --> Controller: void
+deactivate Service
+
+== Формирование ответа ==
+
+Controller -> Dispatcher: ResponseEntity.ok(HttpStatus.OK)
+deactivate Controller
+
+Dispatcher -> Client: HTTP 200 OK
+deactivate Dispatcher
+
+legend right
+  |<#LightBlue> **Мои классы** | |
+  |<#LightGreen> **Классы Spring** | |
+  | **Внешние системы** | |
+end legend
+
+@enduml

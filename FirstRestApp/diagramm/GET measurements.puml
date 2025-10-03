@@ -1,0 +1,90 @@
+@startuml
+title Диаграмма последовательности: получение всех измерений
+
+skinparam BackgroundColor transparent
+skinparam ParticipantBackgroundColor #LightBlue
+skinparam ActorBackgroundColor #White
+skinparam ControlBackgroundColor #LightGreen
+skinparam DatabaseBackgroundColor #White
+
+actor "Клиент" as Client #White
+control "DispatcherServlet" as Dispatcher #LightGreen
+control "ApplicationContext" as AppContext #LightGreen
+participant "MeasurementController" as Controller #LightBlue
+participant "MeasurementService" as Service #LightBlue
+participant "MeasurementRepository" as Repository #LightBlue
+control "JpaRepository" as JPA #LightGreen
+database "База данных" as Database #White
+participant "Convector" as Converter #LightBlue
+control "ModelMapper" as Mapper #LightGreen
+participant "MeasurementsResponse" as Response #LightBlue
+
+== Инициализация запроса ==
+
+Client -> Dispatcher: GET /measurements
+activate Dispatcher
+
+Dispatcher -> AppContext: find handler for /measurements
+activate AppContext
+AppContext --> Dispatcher: MeasurementController.getAllMeasurements()
+deactivate AppContext
+
+== Обработка в контроллере ==
+
+Dispatcher -> Controller: getAllMeasurements()
+activate Controller
+
+Controller -> Service: findAll()
+activate Service
+
+Service -> Repository: findAll()
+activate Repository
+
+Repository -> JPA: findAll() with @EntityGraph
+activate JPA
+JPA -> Database: SELECT m.*, s.* FROM measurement m LEFT JOIN sensor s ON m.sensor_id = s.id
+activate Database
+Database --> JPA: List<Measurement> with sensor data
+deactivate Database
+JPA --> Repository: List<Measurement>
+deactivate JPA
+
+Repository --> Service: List<Measurement>
+deactivate Repository
+
+Service --> Controller: List<Measurement>
+deactivate Service
+
+== Преобразование в DTO ==
+
+Controller -> Converter: convectMeasurementAndMeasurementDTO() for each measurement
+activate Converter
+
+Converter -> Mapper: map(measurement, MeasurementDTO.class)
+activate Mapper
+Mapper --> Converter: MeasurementDTO object
+deactivate Mapper
+
+Converter --> Controller: List<MeasurementDTO>
+deactivate Converter
+
+Controller -> Response: new MeasurementsResponse(measurementDTOList)
+activate Response
+Response --> Controller: MeasurementsResponse object
+deactivate Response
+
+== Формирование ответа ==
+
+Controller -> Dispatcher: MeasurementsResponse
+deactivate Controller
+
+Dispatcher -> Client: HTTP 200 OK\n{ "measurementDTOList": [ ... ] }
+deactivate Dispatcher
+
+legend right
+  |<#LightBlue> **Мои классы** | |
+  |<#LightGreen> **Классы Spring** | |
+  | **Внешние системы** | |
+end legend
+
+@enduml

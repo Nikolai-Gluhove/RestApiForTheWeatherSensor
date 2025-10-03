@@ -1,0 +1,69 @@
+@startuml
+title Диаграмма последовательности: получение количества дождливых дней
+
+skinparam BackgroundColor transparent
+skinparam ParticipantBackgroundColor #LightBlue
+skinparam ActorBackgroundColor #White
+skinparam ControlBackgroundColor #LightGreen
+skinparam DatabaseBackgroundColor #White
+
+actor "Клиент" as Client #White
+control "DispatcherServlet" as Dispatcher #LightGreen
+control "ApplicationContext" as AppContext #LightGreen
+participant "MeasurementController" as Controller #LightBlue
+participant "MeasurementService" as Service #LightBlue
+participant "MeasurementRepository" as Repository #LightBlue
+control "JpaRepository" as JPA #LightGreen
+database "База данных" as Database #White
+
+== Инициализация запроса ==
+
+Client -> Dispatcher: GET /measurements/rainyDaysCount
+activate Dispatcher
+
+Dispatcher -> AppContext: find handler for /measurements/rainyDaysCount
+activate AppContext
+AppContext --> Dispatcher: MeasurementController.getNumberOfRainyDays()
+deactivate AppContext
+
+== Обработка в контроллере ==
+
+Dispatcher -> Controller: getNumberOfRainyDays()
+activate Controller
+
+Controller -> Service: countByRainingTrue()
+activate Service
+
+Service -> Repository: countByRainingTrue()
+activate Repository
+
+Repository -> JPA: countByRainingTrue()
+activate JPA
+JPA -> Database: SELECT COUNT(*) FROM measurement WHERE raining = true
+activate Database
+Database --> JPA: count result (e.g., 15)
+deactivate Database
+JPA --> Repository: long
+deactivate JPA
+
+Repository --> Service: long
+deactivate Repository
+
+Service --> Controller: long
+deactivate Service
+
+== Формирование ответа ==
+
+Controller -> Dispatcher: long (количество дождливых дней)
+deactivate Controller
+
+Dispatcher -> Client: HTTP 200 OK\n15
+deactivate Dispatcher
+
+legend right
+  |<#LightBlue> **Мои классы** | |
+  |<#LightGreen> **Классы Spring** | |
+  | **Внешние системы** | |
+end legend
+
+@enduml

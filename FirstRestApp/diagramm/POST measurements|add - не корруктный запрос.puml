@@ -1,0 +1,111 @@
+@startuml
+title Диаграмма последовательности: обработка некорректного запроса на добавление измерения
+
+skinparam BackgroundColor transparent
+skinparam ParticipantBackgroundColor #LightBlue
+skinparam ActorBackgroundColor #White
+skinparam ControlBackgroundColor #LightGreen
+skinparam DatabaseBackgroundColor #White
+
+actor "Клиент" as Client #White
+control "DispatcherServlet" as Dispatcher #LightGreen
+control "ApplicationContext" as AppContext #LightGreen
+participant "MeasurementController" as Controller #LightBlue
+participant "MeasurementValidator" as Validator #LightBlue
+participant "SensorService" as SensorService #LightBlue
+participant "SensorRepository" as SensorRepo #LightBlue
+control "JpaRepository" as JPA #LightGreen
+database "База данных" as Database #White
+participant "RestExceptionHandler" as ExceptionHandler #LightBlue
+participant "ErrorResponse" as ErrorResp #LightBlue
+
+== Инициализация запроса ==
+
+Client -> Dispatcher: POST /measurements/add\n{ "value": 150, "raining": null, "sensor": { "name": "ab" } }
+activate Dispatcher
+
+Dispatcher -> AppContext: find handler for /measurements/add
+activate AppContext
+AppContext --> Dispatcher: MeasurementController.add()
+deactivate AppContext
+
+== Обработка в контроллере ==
+
+Dispatcher -> Controller: add(measurementDTO, bindingResult)
+activate Controller
+
+Controller -> Dispatcher: **@Valid** аннотация
+activate Dispatcher
+Dispatcher -> Controller: Spring Validation автоматически\nпроверяет аннотации в MeasurementDTO\n(ошибки: value > 100, raining = null)
+deactivate Dispatcher
+
+note right of Controller: Spring автоматически обнаруживает\nнарушение @Range(min=-100, max=100)\nи @NotNull для raining
+
+== Валидация существования сенсора ==
+
+Controller -> Validator: validate(measurementDTO, bindingResult)
+activate Validator
+
+note right of Validator: Кастомная валидация выполняется\nнесмотря на ошибки базовой валидации
+
+Validator -> SensorService: findByName(measurementDTO.sensor.name)
+activate SensorService
+
+SensorService -> SensorRepo: findByName(name)
+activate SensorRepo
+
+SensorRepo -> JPA: findByName(name)
+activate JPA
+JPA -> Database: SELECT * FROM sensor WHERE name = 'ab'
+activate Database
+Database --> JPA: Optional.empty()
+deactivate Database
+JPA --> SensorRepo: Optional.empty()
+deactivate JPA
+
+SensorRepo --> SensorService: Optional.empty()
+deactivate SensorRepo
+
+SensorService --> Validator: Optional.empty() (сенсор не найден)
+deactivate SensorService
+
+Validator -> Validator: errors.rejectValue("sensor.name", "400", "Сенсора ab нет в системе")
+Validator --> Controller: bindingResult с ошибками\n(базовая + кастомная валидация)
+deactivate Validator
+
+== Генерация исключения ==
+
+Controller -> Controller: bindingResult.hasErrors() = true
+Controller -> Controller: **throw new MeasurementValidException(bindingResult)**
+deactivate Controller
+
+note right of Controller: Исключение содержит BindingResult\nсо всеми ошибками валидации
+
+== Обработка исключения ==
+
+Dispatcher -> ExceptionHandler: handleException(MeasurementValidException)
+activate ExceptionHandler
+
+ExceptionHandler -> ExceptionHandler: getMessage(customError)\nизвлекает ошибки из BindingResult
+ExceptionHandler -> ErrorResp: **new ErrorResponse(errorMessage, timestamp)**
+activate ErrorResp
+ErrorResp --> ExceptionHandler: ErrorResponse объект
+deactivate ErrorResp
+
+ExceptionHandler -> Dispatcher: ResponseEntity<ErrorResponse>(response, HttpStatus.BAD_REQUEST)
+deactivate ExceptionHandler
+
+== Формирование ответа об ошибке ==
+
+Dispatcher -> Client: HTTP 400 Bad Request\n{ "message": "value - Значение должно быть от -100 до 100; raining - значение не может быть пустым; sensor.name - Сенсора ab нет в системе; ", "timestamp": 1234567890 }
+deactivate Dispatcher
+
+note over Controller, Database: Запрос не дошел до сохранения в БД\nиз-за множественных ошибок валидации
+
+legend right
+  |<#LightBlue> **Мои классы** | |
+  |<#LightGreen> **Классы Spring** | |
+  | **Внешние системы** | |
+end legend
+
+@enduml

@@ -1,0 +1,182 @@
+@startuml
+title Диаграмма последовательности: запуск Spring Boot приложения
+
+skinparam BackgroundColor transparent
+skinparam ParticipantBackgroundColor #LightBlue
+skinparam ActorBackgroundColor #White
+skinparam ControlBackgroundColor #LightGreen
+skinparam DatabaseBackgroundColor #White
+
+actor "Пользователь" as User #White
+participant "JVM" as JVM #White
+control "SpringApplication" as SpringApp #LightGreen
+control "ApplicationContext" as AppContext #LightGreen
+control "ComponentScanner" as ComponentScanner #LightGreen
+control "BeanFactory" as BeanFactory #LightGreen
+control "DataSource" as DataSource #LightGreen
+control "JPA" as JPA #LightGreen
+control "EmbeddedTomcat" as Tomcat #LightGreen
+control "DispatcherServlet" as Dispatcher #LightGreen
+participant "FirstRestAppApplication" as MainApp #LightBlue
+participant "AppConfig" as AppConfig #LightBlue
+participant "ModelMapper" as ModelMapper #LightBlue
+participant "Repositories" as Repositories #LightBlue
+participant "Services" as Services #LightBlue
+participant "Validators" as Validators #LightBlue
+participant "Convector" as Convector #LightBlue
+participant "Controllers" as Controllers #LightBlue
+database "База данных" as Database #White
+
+== Запуск приложения ==
+
+User -> JVM: java -jar FirstRestApp.jar
+activate JVM
+
+JVM -> MainApp: main(String[] args)
+activate MainApp
+
+MainApp -> SpringApp: run(FirstRestAppApplication.class, args)
+activate SpringApp
+
+== Сканирование компонентов ==
+
+SpringApp -> ComponentScanner: scan package "ru.alishev.springcourse"
+activate ComponentScanner
+
+ComponentScanner -> ComponentScanner: find @SpringBootApplication
+ComponentScanner -> ComponentScanner: find @Component, @Service, @Repository, @Controller, @Configuration
+
+ComponentScanner --> SpringApp: список классов для создания бинов
+deactivate ComponentScanner
+
+== Создание ApplicationContext ==
+
+SpringApp -> AppContext: create and configure
+activate AppContext
+
+AppContext -> BeanFactory: create bean factory
+activate BeanFactory
+
+== Создание бинов конфигурации ==
+
+BeanFactory -> AppConfig: create @Configuration bean
+activate AppConfig
+
+AppConfig -> AppConfig: @Bean modelMapper()
+AppConfig --> BeanFactory: ModelMapper bean
+deactivate AppConfig
+
+== Создание репозиториев ==
+
+BeanFactory -> Repositories: create @Repository beans\n(MeasurementRepository, SensorRepository)
+activate Repositories
+
+Repositories -> JPA: create JpaRepository proxies
+activate JPA
+JPA --> Repositories: прокси репозиториев
+deactivate JPA
+
+Repositories --> BeanFactory: репозитории готовы
+deactivate Repositories
+
+== Создание сервисов ==
+
+BeanFactory -> Services: create @Service beans\n(MeasurementService, SensorService)
+activate Services
+
+Services -> Services: inject repositories via @Autowired
+Services --> BeanFactory: сервисы готовы
+deactivate Services
+
+== Создание валидаторов и конверторов ==
+
+BeanFactory -> Validators: create @Component beans\n(MeasurementValidator, SensorValidator)
+activate Validators
+
+Validators -> Validators: inject services via @Autowired
+Validators --> BeanFactory: валидаторы готовы
+deactivate Validators
+
+BeanFactory -> Convector: create @Component bean
+activate Convector
+
+Convector -> Convector: inject ModelMapper via @Autowired
+Convector --> BeanFactory: конвертер готов
+deactivate Convector
+
+== Создание контроллеров ==
+
+BeanFactory -> Controllers: create @RestController beans\n(MeasurementController, SensorController)
+activate Controllers
+
+Controllers -> Controllers: inject services, validators, convector via @Autowired
+Controllers --> BeanFactory: контроллеры готовы
+deactivate Controllers
+
+== Настройка базы данных ==
+
+BeanFactory -> DataSource: create DataSource bean
+activate DataSource
+
+DataSource -> Database: установка соединения
+activate Database
+Database --> DataSource: соединение установлено
+deactivate Database
+
+DataSource --> BeanFactory: DataSource готов
+deactivate DataSource
+
+BeanFactory -> JPA: configure JPA with entities\n(Measurement, Sensor)
+activate JPA
+
+JPA -> Database: создание/проверка таблиц
+activate Database
+Database --> JPA: таблицы готовы
+deactivate Database
+
+JPA --> BeanFactory: JPA настроен
+deactivate JPA
+
+BeanFactory --> AppContext: все бины созданы
+deactivate BeanFactory
+
+== Запуск веб-сервера ==
+
+AppContext -> Tomcat: create embedded server
+activate Tomcat
+
+Tomcat -> Dispatcher: register DispatcherServlet
+activate Dispatcher
+
+Dispatcher -> AppContext: scan @RequestMapping аннотации
+activate AppContext
+AppContext --> Dispatcher: маппинг URL -> контроллеры
+deactivate AppContext
+
+Dispatcher --> Tomcat: DispatcherServlet настроен
+deactivate Dispatcher
+
+Tomcat -> Tomcat: start server on port 8080
+Tomcat --> AppContext: сервер запущен
+deactivate Tomcat
+
+AppContext --> SpringApp: ApplicationContext готов
+deactivate AppContext
+
+SpringApp --> MainApp: приложение запущено
+deactivate SpringApp
+
+MainApp --> JVM: приложение работает
+deactivate MainApp
+
+JVM --> User: Spring Boot приложение запущено\nhttp://localhost:8080
+deactivate JVM
+
+
+legend right
+  |<#LightBlue> **Мои классы** | |
+  |<#LightGreen> **Классы Spring** | |
+  | **Внешние системы** | |
+end legend
+
+@enduml
