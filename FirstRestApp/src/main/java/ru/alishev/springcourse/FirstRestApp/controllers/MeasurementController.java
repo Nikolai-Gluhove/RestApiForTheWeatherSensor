@@ -8,6 +8,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import ru.alishev.springcourse.FirstRestApp.dto.MeasurementDTO;
+import ru.alishev.springcourse.FirstRestApp.dto.MeasurementsResponse;
 import ru.alishev.springcourse.FirstRestApp.error.ErrorResponse;
 import ru.alishev.springcourse.FirstRestApp.error.MeasurementValidException;
 import ru.alishev.springcourse.FirstRestApp.services.MeasurementService;
@@ -65,8 +66,9 @@ public class MeasurementController {
 
     //получить все изменения
     @GetMapping
-    public List<MeasurementDTO> getAllMeasurements(){
-        return measurementService.findAll().stream().map(convector::convectMeasurementAndMeasurementDTO).collect(Collectors.toList());
+    public MeasurementsResponse getAllMeasurements(){
+//        return measurementService.findAll().stream().map(convector::convectMeasurementAndMeasurementDTO).collect(Collectors.toList());
+        return new MeasurementsResponse(measurementService.findAll().stream().map(convector::convectMeasurementAndMeasurementDTO).collect(Collectors.toList()));
     }
 
     //получить количество дождливых дней
