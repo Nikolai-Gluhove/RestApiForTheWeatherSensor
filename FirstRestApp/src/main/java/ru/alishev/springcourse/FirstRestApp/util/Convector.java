@@ -8,14 +8,13 @@ import ru.alishev.springcourse.FirstRestApp.dto.MeasurementDTO;
 import ru.alishev.springcourse.FirstRestApp.dto.SensorDTO;
 import ru.alishev.springcourse.FirstRestApp.models.Measurement;
 import ru.alishev.springcourse.FirstRestApp.models.Sensor;
-import ru.alishev.springcourse.FirstRestApp.services.SensorService;
 
 @Configuration
 public class Convector {
     private final ModelMapper modelMapper;
 
     @Autowired
-    public Convector(ModelMapper modelMapper, SensorService sensorService) {
+    public Convector(ModelMapper modelMapper) {
         this.modelMapper = modelMapper;
     }
 

@@ -13,7 +13,7 @@ public class Measurement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private int id;
+    private Integer id;
 
     @Column(name = "value")
     @Range(min = -100, max = 100, message = "Значение должно быть от -100 до 100")
@@ -29,6 +29,7 @@ public class Measurement {
     private Sensor sensor;
 
     @Column(name = "data_time")
+    @NotNull
     private LocalDateTime dateTime;
 
     public Measurement() {
