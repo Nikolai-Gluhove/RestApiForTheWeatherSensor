@@ -1,7 +1,6 @@
 @startuml
 title Диаграмма последовательности: запуск Spring Boot приложения
 
-skinparam BackgroundColor transparent
 skinparam ParticipantBackgroundColor #LightBlue
 skinparam ActorBackgroundColor #White
 skinparam ControlBackgroundColor #LightGreen

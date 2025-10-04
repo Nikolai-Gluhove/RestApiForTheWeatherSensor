@@ -1,7 +1,6 @@
 @startuml
 title Диаграмма последовательности: получение всех измерений
 
-skinparam BackgroundColor transparent
 skinparam ParticipantBackgroundColor #LightBlue
 skinparam ActorBackgroundColor #White
 skinparam ControlBackgroundColor #LightGreen

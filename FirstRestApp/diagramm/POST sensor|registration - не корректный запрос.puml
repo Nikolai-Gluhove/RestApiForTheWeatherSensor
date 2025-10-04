@@ -1,7 +1,6 @@
 @startuml
 title Диаграмма последовательности: обработка некорректного запроса на регистрацию сенсора
 
-skinparam BackgroundColor transparent
 skinparam ParticipantBackgroundColor #LightBlue
 skinparam ActorBackgroundColor #White
 skinparam ControlBackgroundColor #LightGreen
